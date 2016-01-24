@@ -1,0 +1,14 @@
+- Explain the reason for the __built_bswap64 calls in loader.c
+
+- What is a move-to-front list? Why did I use it in my memory model?
+
+- What was the hardest instruction to emulate? Explain?
+
+- What's the point of this strange pattern in our header files?
+
+    #ifndef _MEMORY_H_
+    #define _MEMORY_H_
+
+    // memory stuff
+
+    #endif
