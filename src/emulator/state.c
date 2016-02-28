@@ -69,7 +69,6 @@ void run(State* s) {
             case 15 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                 int imm = (int) (instr << 16);
-                //uint32_t immL = (uint32_t) (imm << 16 & 0xFFFF0000);
                 s -> gprs[dest] = imm;
                 s -> pc += 4;
                 break;
@@ -85,29 +84,29 @@ void run(State* s) {
                 if (bo == 1) {
                     switch (bi) {
                         case 0 : {
-                            if ((s -> cr) != 0b100) {
-                                s -> pc += target;
+                            if ((s -> cr) == 0b100) {
+                                s -> pc += 4;
                             }
                             else {
-                                s -> pc += 4;
+                                s -> pc += target;
                             }
                             break;
                         }
                         case 1 : {
-                            if ((s -> cr) != 0b010) {
-                                s -> pc += target;
+                            if ((s -> cr) == 0b010) {
+                                s -> pc += 4;
                             }
                             else {
-                                s -> pc += 4;
+                                s -> pc += target;
                             }
                             break;
                         }
                         case 2 : {
-                            if ((s -> cr) != 0b001) {
-                                s -> pc += target;
+                            if ((s -> cr) == 0b001) {
+                                s -> pc += 4;
                             }
                             else {
-                                s -> pc += 4;
+                                s -> pc += target;
                             }
                             break;
                         }
@@ -198,8 +197,8 @@ void run(State* s) {
                     }
                     //bl
                     case 1 : {
+                        s -> lr = s -> pc + 4;
                         s -> pc += eAddr;
-                        s -> lr = eAddr + 4;
                         break;
                     }
                 }
