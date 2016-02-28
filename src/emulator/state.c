@@ -76,31 +76,79 @@ void run(State* s) {
             }
             //branch conditionals: beq, bne, ble, bge
             case 16 : {
-                uint16_t bo = (uint16_t) (instr >> 21 & 0x1F);
+                uint16_t bo = (uint16_t) (instr >> 23 & 0x7);
                 uint16_t bi = (uint16_t) (instr >> 16 & 0x1F);
                 int target = (int) (instr << 16);
                 target = target >> 18;
                 target = target << 2;
-                //bne
-                if (bo == 4 && bi == 10) {
-                    //branch
-                    if (((s -> cr) == 0b100) || ((s -> cr) == 0b010)) {
-                        s -> pc += target;
-                    }
-                    //don't branch
-                    else {
-                        s -> pc += 4;
+                //Branch if cond is false
+                if (bo == 1) {
+                    switch (bi) {
+                        case 0 : {
+                            if ((s -> cr) != 0b100) {
+                                s -> pc += target;
+                            }
+                            else {
+                                s -> pc += 4;
+                            }
+                            break;
+                        }
+                        case 1 : {
+                            if ((s -> cr) != 0b010) {
+                                s -> pc += target;
+                            }
+                            else {
+                                s -> pc += 4;
+                            }
+                            break;
+                        }
+                        case 2 : {
+                            if ((s -> cr) != 0b001) {
+                                s -> pc += target;
+                            }
+                            else {
+                                s -> pc += 4;
+                            }
+                            break;
+                        }
+                        default : {
+                            break;
+                        }
                     }
                 }
-                //beq
+                //Branch if cond is true
                 else {
-                    //branch
-                    if ((s -> cr) == 0b001) {
-                        s -> pc += target;
-                    }
-                    //don't branch
-                    else {
-                        s -> pc += 4;
+                    switch (bi) {
+                        case 0 : {
+                            if ((s -> cr) == 0b100) {
+                                s -> pc += target;
+                            }
+                            else {
+                                s -> pc += 4;
+                            }
+                            break;
+                        }
+                        case 1 : {
+                            if ((s -> cr) == 0b010) {
+                                s -> pc += target;
+                            }
+                            else {
+                                s -> pc += 4;
+                            }
+                            break;
+                        }
+                        case 2 : {
+                            if ((s -> cr) == 0b001) {
+                                s -> pc += target;
+                            }
+                            else {
+                                s -> pc += 4;
+                            }
+                            break;
+                        }
+                        default : {
+                            break;
+                        }
                     }
                 }
                 break;
