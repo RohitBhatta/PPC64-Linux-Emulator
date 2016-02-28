@@ -33,7 +33,8 @@ void run(State* s) {
             //cmpdi
             case 11 : {
                 uint16_t srcA = (uint16_t) (instr >> 16 & 0x1F);
-                uint16_t imm = (uint16_t) (instr & 0xFFFF);
+                int imm = (int) (instr << 16);
+                imm = imm >> 16;
                 if ((s -> gprs[srcA]) < (imm)) {
                     s -> cr = 0b100;
                 }
@@ -50,7 +51,9 @@ void run(State* s) {
             case 14 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
-                uint16_t imm = (uint16_t) (instr & 0xFFFF);
+                //uint16_t imm = (uint16_t) (instr & 0xFFFF);
+                int imm = (int) (instr << 16);
+                imm = imm >> 16;
                 //addi
                 if (src != 0) {
                     s -> gprs[dest] = s -> gprs[src] + imm;
@@ -65,14 +68,41 @@ void run(State* s) {
             //lis
             case 15 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
-                uint16_t imm = (uint16_t) (instr & 0xFFFF);
-                uint32_t immL = (uint32_t) (imm << 16 & 0xFFFF0000);
-                s -> gprs[dest] += immL;
+                int imm = (int) (instr << 16);
+                //uint32_t immL = (uint32_t) (imm << 16 & 0xFFFF0000);
+                s -> gprs[dest] = imm;
                 s -> pc += 4;
                 break;
             }
             //branch conditionals: beq, bne, ble, bge
             case 16 : {
+                uint16_t bo = (uint16_t) (instr >> 21 & 0x1F);
+                uint16_t bi = (uint16_t) (instr >> 16 & 0x1F);
+                int target = (int) (instr << 16);
+                target = target >> 18;
+                target = target << 2;
+                //bne
+                if (bo == 4 && bi == 10) {
+                    //branch
+                    if (((s -> cr) == 0b100) || ((s -> cr) == 0b010)) {
+                        s -> pc += target;
+                    }
+                    //don't branch
+                    else {
+                        s -> pc += 4;
+                    }
+                }
+                //beq
+                else {
+                    //branch
+                    if ((s -> cr) == 0b001) {
+                        s -> pc += target;
+                    }
+                    //don't branch
+                    else {
+                        s -> pc += 4;
+                    }
+                }
                 break;
             }
             //sc, system call, either print or exit (if exit set exit to 1)
@@ -84,6 +114,24 @@ void run(State* s) {
                 //print
                 else {
                     //print here, how do we know what to print???
+                    uint64_t r4 = s -> gprs[4];
+                    uint64_t r5 = s -> gprs[5];
+                    if (r5 == 1) {
+                        uint8_t printNum = read8(memory, r4);
+                        printf("%d", printNum);
+                    }
+                    else if (r5 == 2) {
+                        uint16_t printNum = read16(memory, r4);
+                        printf("%d", printNum);
+                    }
+                    else if (r5 == 4) {
+                        uint32_t printNum = read32(memory, r4);
+                        printf("%32u", printNum);
+                    }
+                    else if (r5 == 8) {
+                        uint64_t printNum = read64(memory, r4);
+                        printf("%lu", printNum);
+                    }
                     s -> pc += 4;
                 }
                 break;
@@ -91,7 +139,9 @@ void run(State* s) {
             //b, bl
             case 18 : {
                 uint16_t ext = (uint16_t) (instr & 0x1);
-                uint64_t eAddr = (uint64_t) (instr & 0x3FFFFFC);
+                int eAddr = (int) (instr << 6);
+                eAddr = eAddr >> 8;
+                eAddr = eAddr << 2;
                 switch (ext) {
                     //b
                     case 0 : {
@@ -116,7 +166,7 @@ void run(State* s) {
             case 24 : {
                 uint16_t dest = (uint16_t) (instr >> 16 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 21 & 0x1F);
-                uint16_t imm = (uint16_t) (instr & 0xFFFF);
+                uint64_t imm = (uint64_t) (instr & 0xFFFF);
                 s -> gprs[dest] = s -> gprs[src] | imm;
                 s -> pc += 4;
                 break;
@@ -125,9 +175,9 @@ void run(State* s) {
             case 25 : {
                 uint16_t dest = (uint16_t) (instr >> 16 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 21 & 0x1F);
-                uint32_t imm = (uint32_t) (instr & 0xFFFF);
-                uint32_t immL = (uint32_t) (imm << 16 & 0xFFFF0000);
-                s -> gprs[dest] = s -> gprs[src] | immL;
+                uint64_t imm = (uint64_t) (instr & 0xFFFF);
+                imm = imm << 16 & 0xFFFF0000;
+                s -> gprs[dest] = s -> gprs[src] | imm;
                 s -> pc += 4;
                 break;
             }
@@ -158,7 +208,7 @@ void run(State* s) {
                         uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                         uint16_t srcA = (uint16_t) (instr >> 16 & 0x1F);
                         uint16_t srcB = (uint16_t) (instr >> 11 & 0x1F);
-                        s -> gprs[dest] = (s -> gprs[srcA]) - (s -> gprs[srcB]);
+                        s -> gprs[dest] = (s -> gprs[srcB]) - (s -> gprs[srcA]);
                         s -> pc += 4;
                         break;
                     }
@@ -245,7 +295,8 @@ void run(State* s) {
             case 38 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
-                uint16_t imm = (uint16_t) (instr & 0xFFFF);
+                int imm = (int) (instr << 16);
+                imm = imm >> 16;
                 uint64_t eAddr;
                 if (src == 0) {
                     eAddr = imm;
@@ -263,23 +314,35 @@ void run(State* s) {
             case 58 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
-                uint16_t imm = (uint16_t) (instr & 0xFFFF);
-                uint64_t eAddr = (uint64_t) (s -> gprs[src] + imm);
+                int imm = (int) (instr << 16);
+                imm = imm >> 18;
+                imm = imm << 2;
+                uint64_t eAddr;
+                if (src == 0) {
+                    eAddr = imm;
+                }
+                else {
+                    eAddr = s -> gprs[src] + imm;
+                }
                 s -> gprs[dest] = read64(memory, eAddr);
                 s -> pc += 4;
                 break;
             }
             //stdu, std
             case 62 : {
-                uint16_t ext = (uint16_t) (instr & 0x2);
+                //uint16_t ext = (uint16_t) (instr & 0x2);
+                int ext = (int) (instr << 30);
+                ext = ext >> 30;
                 switch (ext) {
                     //std
-                    case 1 : {
-                        uint16_t src = (uint16_t) (instr >> 21 & 0x1F);
-                        uint16_t dest = (uint16_t) (instr >> 16 & 0x1F);
-                        uint16_t imm = (uint16_t) (instr & 0xFFFF);//Might need to change to 0xFFFC
+                    case 0 : {
+                        uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
+                        uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
+                        int imm = (int) (instr << 16);//Might need to change to 0xFFFC
+                        imm = imm >> 18;
+                        imm = imm << 2;
                         uint64_t eAddr;
-                        if (s -> gprs[dest] == 0) {
+                        if (s -> gprs[src] == 0) {
                             eAddr = imm;
                         }
                         else {
@@ -290,18 +353,15 @@ void run(State* s) {
                         break;
                     }
                     //stdu
-                    case 0 : {
+                    case 1 : {
                         uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                         uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
-                        //Cast immediate to int because it can be negative
-                        //int imm = (int) (instr & 0xFFFC);
-                        int imm;
-                        imm = instr << 16;
-                        imm = imm >> 16;
-                        imm--;
+                        int imm = (int) (instr << 16);
+                        imm = imm >> 18;
+                        imm = imm << 2;
                         uint64_t eAddr = (uint64_t) (s -> gprs[src] + imm);
                         write64(memory, eAddr, s -> gprs[dest]);
-                        s -> gprs[src] += eAddr;
+                        s -> gprs[src] = eAddr;
                         s -> pc += 4;
                         break;
                     }

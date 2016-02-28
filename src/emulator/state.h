@@ -6,7 +6,7 @@
 
 struct State {
     uint64_t pc;
-    uint16_t gprs[32];
+    uint64_t gprs[32];
     uint64_t lr;
     uint64_t cr;
     Memory *mem;
