@@ -80,15 +80,33 @@ void write8(Memory* mem, uint64_t addr, uint8_t data) {
 }
 
 void write16(Memory* mem, uint64_t addr, uint16_t data) {
-    MISSING();
+    uint16_t temp = data;
+    uint16_t high = temp >> 8;
+    high = (uint8_t) (high & 0xFF);
+    write8(mem, addr, high);
+    //temp = (uint8_t) (temp & 0xFF00);
+    temp = (uint8_t) (temp & 0xFF);
+    write8(mem, addr + 1, temp);
 }
 
 void write32(Memory* mem, uint64_t addr, uint32_t data) {
-    MISSING();
+    uint32_t temp = data;
+    uint32_t high = temp >> 16;
+    high = (uint16_t) (high & 0xFFFF);
+    write16(mem, addr, high);
+    //temp = (uint16_t) (temp & 0xFFFF0000);
+    temp = (uint16_t) (temp & 0xFFFF);
+    write16(mem, addr + 2, temp);
 }
 
 void write64(Memory* mem, uint64_t addr, uint64_t data) {
-    MISSING();
+    uint64_t temp = data;
+    uint64_t high = temp >> 32;
+    high = (uint32_t) (high & 0xFFFFFFFF);
+    write32(mem, addr, high);
+    //temp = (uint32_t) (temp & 0xFFFFFFFF00000000);
+    temp = (uint32_t) (temp & 0xFFFFFFFF);
+    write32(mem, addr + 4, temp);
 }
 
 uint8_t read8(Memory* mem, uint64_t addr) {
@@ -97,17 +115,22 @@ uint8_t read8(Memory* mem, uint64_t addr) {
 }
 
 uint16_t read16(Memory* mem, uint64_t addr) {
-    MISSING();
-    return 0;
+    uint16_t temp = read8(mem, addr);
+    uint16_t num = temp << 8;
+    num = num + read8(mem, addr + 1);
+    return num;
 }
 
 uint32_t read32(Memory* mem, uint64_t addr) {
-    MISSING();
-    return 0;
+    uint32_t temp = read16(mem, addr);
+    uint32_t num = temp << 16;
+    num = num + read16(mem, addr + 2);
+    return num;
 }
 
 uint64_t read64(Memory* mem, uint64_t addr) {
-    MISSING();
-    return 0;
+    uint64_t temp = read32(mem, addr);
+    uint64_t num = temp << 32;
+    num = num + read32(mem, addr + 4);
+    return num;
 }
-

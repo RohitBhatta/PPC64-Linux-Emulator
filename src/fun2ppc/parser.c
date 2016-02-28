@@ -30,8 +30,7 @@ enum TKind {
     tPRINT,
     tFUN,
     tCOMMA,
-    tRETURN,
-    tBREAK
+    tRETURN
 };
 
 struct Token {
@@ -122,8 +121,6 @@ static void peekId(void) {
                 current.kind = tFUN;
             } else if (strcmp(current.ptr, "return") == 0) {
                 current.kind = tRETURN;
-            } else if (strcmp(current.ptr, "break") == 0) {
-                current.kind = tBREAK;
             } else {
                 current.kind = tID;
             }
@@ -226,11 +223,6 @@ static void consume() {
         current.ptr = 0;
     }
     current.kind = tNONE;
-}
-
-static int is(enum TKind kind) {
-    peek();
-    return current.kind == kind;
 }
 
 static int isReturn() {
@@ -522,17 +514,6 @@ static Statement *statement(void) {
 
         consume();
         p->returnValue = expression();
-
-        if (isSemi()) {
-            consume();
-        }
-
-        return p;
-    } else if (is(tBREAK)) {
-        Statement *p = NEW(Statement);
-        p->kind = sBreak;
-
-        consume();
 
         if (isSemi()) {
             consume();

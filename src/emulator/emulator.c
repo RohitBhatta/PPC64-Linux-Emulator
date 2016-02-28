@@ -21,15 +21,15 @@ int main(int argc, const char **argv) {
 
     Memory* memory = newMemory();
     uint64_t e = load(fd,memory);
-    /*uint64_t pc =*/ read64(memory,e);
-    /*uint64_t r2 =*/ read64(memory,e+8);
+    uint64_t pc = read64(memory,e);
+    uint64_t r2 = read64(memory,e+8);
     //printf("entry = %lx\n",e);
     //printf("pc = %lx\n",pc);
     //printf("r2 = %lx\n",r2);
 
     State* s = newState(memory);
-    //s->pc = pc;
-    //s->gprs[2] = r2;
+    s->pc = pc;
+    s->gprs[2] = r2;
     run(s);
     return 0;
 }

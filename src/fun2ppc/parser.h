@@ -72,7 +72,6 @@ enum SKind {
     sWhile,
     sBlock,
     sReturn,
-    sBreak,
 };
 
 struct Statement {
