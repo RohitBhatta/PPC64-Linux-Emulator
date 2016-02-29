@@ -4,7 +4,7 @@
 #include <strings.h>
 
 State* newState(Memory* memory) {
-    State *s = (State *) malloc(sizeof(State *));
+    State *s = (State *) malloc(sizeof(State));
 
     uint64_t link = 0;
     uint64_t cond = 0;
@@ -27,7 +27,7 @@ void run(State* s) {
     int exit = 0;
     while (!exit) {
         //IMPORTANT: add cases for instructions from ppc.asm to work for print
-        uint32_t instr = read32(memory, s -> pc); 
+        uint32_t instr = read32(memory, s -> pc);
         uint16_t opcode = (uint16_t) (instr >> 26 & 0x3F);
         switch (opcode) {
             //cmpdi
@@ -81,7 +81,7 @@ void run(State* s) {
                 target = target >> 18;
                 target = target << 2;
                 uint64_t conds = s -> cr;
-                conds = conds >> 28 & 0x1F;
+                conds = conds >> 29 & 0x7;
                 //Branch if cond is false
                 if (bo == 1) {
                     switch (bi) {
@@ -113,6 +113,7 @@ void run(State* s) {
                             break;
                         }
                         default : {
+                            exit = 1;
                             break;
                         }
                     }
@@ -148,6 +149,7 @@ void run(State* s) {
                             break;
                         }
                         default : {
+                            exit = 1;
                             break;
                         }
                     }
@@ -162,25 +164,9 @@ void run(State* s) {
                 }
                 //print
                 else {
-                    //print here, how do we know what to print???
                     uint64_t r4 = s -> gprs[4];
-                    uint64_t r5 = s -> gprs[5];
-                    if (r5 == 1) {
-                        char printNum = read8(memory, r4);
-                        printf("%c\n", printNum);
-                    }
-                    else if (r5 == 2) {
-                        char printNum = read16(memory, r4);
-                        printf("%c\n", printNum);
-                    }
-                    else if (r5 == 4) {
-                        char printNum = read32(memory, r4);
-                        printf("%c\n", printNum);
-                    }
-                    else if (r5 == 8) {
-                        char printNum = read64(memory, r4);
-                        printf("%c\n", printNum);
-                    }
+                    char printNum = read8(memory, r4);
+                    printf("%c", printNum);
                     s -> pc += 4;
                 }
                 break;
@@ -335,6 +321,7 @@ void run(State* s) {
                         break;
                     }
                     default : {
+                        exit = 1;
                         break;
                     }
                 }
@@ -415,12 +402,14 @@ void run(State* s) {
                         break;
                     }
                     default : {
+                        exit = 1;
                         break;
                     }
                 }
                 break;
             }
             default : {
+                exit = 1;
                 break;
             }
         }
