@@ -36,13 +36,13 @@ void run(State* s) {
                 int imm = (int) (instr << 16);
                 imm = imm >> 16;
                 if ((s -> gprs[srcA]) < (imm)) {
-                    s -> cr = 0b100;
+                    s -> cr = 0x80000000;
                 }
                 else if ((s -> gprs[srcA]) > (imm)) {
-                    s -> cr  = 0b010;
+                    s -> cr  = 0x40000000;
                 }
                 else {
-                    s -> cr = 0b001;
+                    s -> cr = 0x20000000;
                 }
                 s -> pc += 4;
                 break;
@@ -80,11 +80,13 @@ void run(State* s) {
                 int target = (int) (instr << 16);
                 target = target >> 18;
                 target = target << 2;
+                uint64_t conds = s -> cr;
+                conds = conds >> 28 & 0x1F;
                 //Branch if cond is false
                 if (bo == 1) {
                     switch (bi) {
                         case 0 : {
-                            if ((s -> cr) == 0b100) {
+                            if (conds == 0b100) {
                                 s -> pc += 4;
                             }
                             else {
@@ -93,7 +95,7 @@ void run(State* s) {
                             break;
                         }
                         case 1 : {
-                            if ((s -> cr) == 0b010) {
+                            if (conds == 0b010) {
                                 s -> pc += 4;
                             }
                             else {
@@ -102,7 +104,7 @@ void run(State* s) {
                             break;
                         }
                         case 2 : {
-                            if ((s -> cr) == 0b001) {
+                            if (conds == 0b001) {
                                 s -> pc += 4;
                             }
                             else {
@@ -119,7 +121,7 @@ void run(State* s) {
                 else {
                     switch (bi) {
                         case 0 : {
-                            if ((s -> cr) == 0b100) {
+                            if (conds == 0b100) {
                                 s -> pc += target;
                             }
                             else {
@@ -128,7 +130,7 @@ void run(State* s) {
                             break;
                         }
                         case 1 : {
-                            if ((s -> cr) == 0b010) {
+                            if (conds == 0b010) {
                                 s -> pc += target;
                             }
                             else {
@@ -137,7 +139,7 @@ void run(State* s) {
                             break;
                         }
                         case 2 : {
-                            if ((s -> cr) == 0b001) {
+                            if (conds == 0b001) {
                                 s -> pc += target;
                             }
                             else {
@@ -164,20 +166,20 @@ void run(State* s) {
                     uint64_t r4 = s -> gprs[4];
                     uint64_t r5 = s -> gprs[5];
                     if (r5 == 1) {
-                        uint8_t printNum = read8(memory, r4);
-                        printf("%d", printNum);
+                        char printNum = read8(memory, r4);
+                        printf("%c\n", printNum);
                     }
                     else if (r5 == 2) {
-                        uint16_t printNum = read16(memory, r4);
-                        printf("%d", printNum);
+                        char printNum = read16(memory, r4);
+                        printf("%c\n", printNum);
                     }
                     else if (r5 == 4) {
-                        uint32_t printNum = read32(memory, r4);
-                        printf("%32u", printNum);
+                        char printNum = read32(memory, r4);
+                        printf("%c\n", printNum);
                     }
                     else if (r5 == 8) {
-                        uint64_t printNum = read64(memory, r4);
-                        printf("%lu", printNum);
+                        char printNum = read64(memory, r4);
+                        printf("%c\n", printNum);
                     }
                     s -> pc += 4;
                 }
@@ -304,13 +306,13 @@ void run(State* s) {
                         uint16_t srcA = (uint16_t) (instr >> 16 & 0x1F);
                         uint16_t srcB = (uint16_t) (instr >> 11 & 0x1F);
                         if ((s -> gprs[srcA]) < (s -> gprs[srcB])) {
-                            s -> cr = 0b100;
+                            s -> cr = 0x80000000;
                         }
                         else if ((s -> gprs[srcA]) > (s -> gprs[srcB])) {
-                            s -> cr  = 0b010;
+                            s -> cr  = 0x40000000;
                         }
                         else {
-                            s -> cr = 0b001;
+                            s -> cr = 0x20000000;
                         }
                         s -> pc += 4;
                         break;
@@ -389,7 +391,7 @@ void run(State* s) {
                         imm = imm >> 18;
                         imm = imm << 2;
                         uint64_t eAddr;
-                        if (s -> gprs[src] == 0) {
+                        if (src == 0) {
                             eAddr = imm;
                         }
                         else {
