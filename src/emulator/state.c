@@ -26,9 +26,14 @@ void run(State* s) {
     //Set exit to 1 when there is a system call
     int exit = 0;
     while (!exit) {
-        //IMPORTANT: add cases for instructions from ppc.asm to work for print
         uint32_t instr = read32(memory, s -> pc);
         uint16_t opcode = (uint16_t) (instr >> 26 & 0x3F);
+        /*printf("%lu\n", s -> pc);
+        printf("%s%d\n", "opcode", opcode);
+        for (int i = 0; i < 32; i++) {
+            printf("%d: ", i);
+            printf("%lu\n", s -> gprs[i]);
+        }*/
         switch (opcode) {
             //cmpdi
             case 11 : {
@@ -51,7 +56,6 @@ void run(State* s) {
             case 14 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
-                //uint16_t imm = (uint16_t) (instr & 0xFFFF);
                 int imm = (int) (instr << 16);
                 imm = imm >> 16;
                 //addi
@@ -68,7 +72,7 @@ void run(State* s) {
             //lis
             case 15 : {
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
-                int imm = (int) (instr << 16);
+                int imm = (int) (instr << 16 & 0xFFFF0000);
                 s -> gprs[dest] = imm;
                 s -> pc += 4;
                 break;
@@ -82,77 +86,26 @@ void run(State* s) {
                 target = target << 2;
                 uint64_t conds = s -> cr;
                 conds = conds >> 29 & 0x7;
-                //Branch if cond is false
-                if (bo == 1) {
-                    switch (bi) {
-                        case 0 : {
-                            if (conds == 0b100) {
-                                s -> pc += 4;
-                            }
-                            else {
-                                s -> pc += target;
-                            }
-                            break;
-                        }
-                        case 1 : {
-                            if (conds == 0b010) {
-                                s -> pc += 4;
-                            }
-                            else {
-                                s -> pc += target;
-                            }
-                            break;
-                        }
-                        case 2 : {
-                            if (conds == 0b001) {
-                                s -> pc += 4;
-                            }
-                            else {
-                                s -> pc += target;
-                            }
-                            break;
-                        }
-                        default : {
-                            exit = 1;
-                            break;
-                        }
-                    }
+                if (bo == 1 && bi == 0 && conds != 0b100) {
+                    s -> pc += target;
                 }
-                //Branch if cond is true
+                else if (bo == 1 && bi == 1 && conds != 0b010) {
+                    s -> pc += target;
+                }
+                else if (bo == 1 && bi == 2 && conds != 0b001) {
+                    s -> pc += target;
+                }
+                else if (bo == 3 && bi == 0 && conds == 0b100) {
+                    s -> pc += target;
+                }
+                else if (bo == 3 && bi == 1 && conds == 0b010) {
+                    s -> pc += target;
+                }
+                else if (bo == 3 && bi == 2 && conds == 0b001) {
+                    s -> pc += target;
+                }
                 else {
-                    switch (bi) {
-                        case 0 : {
-                            if (conds == 0b100) {
-                                s -> pc += target;
-                            }
-                            else {
-                                s -> pc += 4;
-                            }
-                            break;
-                        }
-                        case 1 : {
-                            if (conds == 0b010) {
-                                s -> pc += target;
-                            }
-                            else {
-                                s -> pc += 4;
-                            }
-                            break;
-                        }
-                        case 2 : {
-                            if (conds == 0b001) {
-                                s -> pc += target;
-                            }
-                            else {
-                                s -> pc += 4;
-                            }
-                            break;
-                        }
-                        default : {
-                            exit = 1;
-                            break;
-                        }
-                    }
+                    s -> pc += 4;
                 }
                 break;
             }
@@ -163,7 +116,7 @@ void run(State* s) {
                     exit = 1;
                 }
                 //print
-                else {
+                else if (s -> gprs[0] == 4) {
                     uint64_t r4 = s -> gprs[4];
                     char printNum = read8(memory, r4);
                     printf("%c", printNum);
