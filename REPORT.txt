@@ -1,8 +1,17 @@
 - Explain the reason for the __built_bswap64 calls in loader.c
 
+The __builtin_bswap64 function call simply returns the 64 bit parameter with the order of the bytes reversed. The reason we need to reverse the bytes is to switch from big endian (used in RISC architectures such as PowerPC) to little endian.
+
+
 - What is a move-to-front list? Why did I use it in my memory model?
 
+A move-to-front list is a list in which each time an element is sought it is moved to the front of the list. The intuition behind this is that frequently-sought, or high-probability elements will tend to stay near the front of the list. This way, we don't have to waste as much time traversing the linked list of memory.
+
+
 - What was the hardest instruction to emulate? Explain?
+
+The instruction to emulate for me was the system call to print. It was more difficult than the others because it involved an understanding of the macros written in ppc.asm by Dr. Gheith in p5, instead of just blindly following the instructions from a manual. It took me a while to figure out that the character to be printed would be in register 4 and it would issue multiple system calls to print to print multiple characters.
+
 
 - What's the point of this strange pattern in our header files?
 
@@ -12,3 +21,5 @@
     // memory stuff
 
     #endif
+
+#ifndef checks whether _MEMORY_H_ has been defined earlier in the file or in an included file. If not, it includes the code between it and the #endif statement. This pattern is often used to make sure header files do not change by defining a token once the file has been included and checking to make sure that the token was not set at the top of that file.

@@ -84,7 +84,6 @@ void write16(Memory* mem, uint64_t addr, uint16_t data) {
     uint16_t high = temp >> 8;
     high = (uint8_t) (high & 0xFF);
     write8(mem, addr, high);
-    //temp = (uint8_t) (temp & 0xFF00);
     temp = (uint8_t) (temp & 0xFF);
     write8(mem, addr + 1, temp);
 }
@@ -94,7 +93,6 @@ void write32(Memory* mem, uint64_t addr, uint32_t data) {
     uint32_t high = temp >> 16;
     high = (uint16_t) (high & 0xFFFF);
     write16(mem, addr, high);
-    //temp = (uint16_t) (temp & 0xFFFF0000);
     temp = (uint16_t) (temp & 0xFFFF);
     write16(mem, addr + 2, temp);
 }
@@ -104,7 +102,6 @@ void write64(Memory* mem, uint64_t addr, uint64_t data) {
     uint64_t high = temp >> 32;
     high = (uint32_t) (high & 0xFFFFFFFF);
     write32(mem, addr, high);
-    //temp = (uint32_t) (temp & 0xFFFFFFFF00000000);
     temp = (uint32_t) (temp & 0xFFFFFFFF);
     write32(mem, addr + 4, temp);
 }

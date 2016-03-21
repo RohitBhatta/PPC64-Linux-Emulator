@@ -3,10 +3,6 @@
 #include <stdio.h>
 #include <strings.h>
 
-int opcodePrint = 0;
-//Branching works fine
-//Macro works fine
-//Basic operations (add, mulld) work fine
 State* newState(Memory* memory) {
     State *s = (State *) malloc(sizeof(State));
 
@@ -24,7 +20,6 @@ State* newState(Memory* memory) {
     return s;
 }
 
-//GDB: gdb emulator, b 32, run t0, n for next instr, s for step in, print to print
 void run(State* s) {
     Memory *memory = s -> mem;
     //Set exit to 1 when there is a system call
@@ -32,31 +27,19 @@ void run(State* s) {
     while (!exit) {
         uint32_t instr = read32(memory, s -> pc);
         uint16_t opcode = (uint16_t) ((instr >> 26) & 0x3F);
-        //printf("%lx\n", s -> pc);
-        //printf("%s%d\n", "opcode", opcode);
-        /*for (int i = 0; i < 32; i++) {
-            printf("%d: ", i);
-            printf("%lu\n", s -> gprs[i]);
-        }*/
         switch (opcode) {
             //cmpdi
             case 11 : {
-                if (opcodePrint) printf("%s\n", "cmpdi");
                 uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                 int imm = (int) (instr << 16);
                 imm = imm >> 16;
-                //printf("%hu\n", srcA);
-                //printf("%lu\n", s -> gprs[15]);
                 if ((s -> gprs[srcA]) < (imm)) {
-                //printf("less\n");
                     s -> cr = 0x80000000;
                 }
                 else if ((s -> gprs[srcA]) > (imm)) {
-                //printf("greater\n");
                     s -> cr = 0x40000000;
                 }
                 else {
-                //printf("equal\n");
                     s -> cr = 0x20000000;
                 }
                 s -> pc += 4;
@@ -70,12 +53,10 @@ void run(State* s) {
                 imm = imm >> 16;
                 //addi
                 if (src != 0) {
-                if (opcodePrint) printf("%s\n", "addi");
                     s -> gprs[dest] = s -> gprs[src] + imm;
                 }
                 //li
                 else {
-                if (opcodePrint) printf("%s\n", "li");
                     s -> gprs[dest] = imm;
                 }
                 s -> pc += 4;
@@ -83,7 +64,6 @@ void run(State* s) {
             }
             //lis
             case 15 : {
-                if (opcodePrint) printf("%s\n", "lis");
                 uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                 uint16_t src = (uint16_t) ((instr >> 16) & 0x1F);
                 int imm = (int) (instr << 16 & 0xFFFF0000);
@@ -105,36 +85,25 @@ void run(State* s) {
                 target = target << 2;
                 uint64_t conds = s -> cr;
                 conds = (conds >> 29) & 0x7;
-                //printf("%hu\n", bo);
-                //printf("%hu\n", bi);
-                //printf("%lu\n", conds);
-                //printf("%d\n", target);
                 if (bo == 1 && bi == 0 && conds != 0b100) {
-                    if (opcodePrint) printf("%s\n", "bge");
                     s -> pc += target;
                 }
                 else if (bo == 1 && bi == 1 && conds != 0b010) {
-                    if (opcodePrint) printf("%s\n", "ble");
                     s -> pc += target;
                 }
                 else if (bo == 1 && bi == 2 && conds != 0b001) {
-                    if (opcodePrint) printf("%s\n", "bne");
                     s -> pc += target;
                 }
                 else if (bo == 3 && bi == 0 && conds == 0b100) {
-                    if (opcodePrint) printf("%s\n", "blt");
                     s -> pc += target;
                 }
                 else if (bo == 3 && bi == 1 && conds == 0b010) {
-                    if (opcodePrint) printf("%s\n", "bgt");
                     s -> pc += target;
                 }
                 else if (bo == 3 && bi == 2 && conds == 0b001) {
-                    if (opcodePrint) printf("%s\n", "beq");
                     s -> pc += target;
                 }
                 else {
-                    if (opcodePrint) printf("%s\n", "bc");
                     s -> pc += 4;
                 }
                 break;
@@ -144,12 +113,10 @@ void run(State* s) {
                 //printf("%lu\n", s -> gprs[0]);
                 //exit
                 if (s -> gprs[0] == 1) {
-                if (opcodePrint) printf("%s\n", "exit");
                     exit = 1;
                 }
                 //print
                 else {
-                if (opcodePrint) printf("%s\n", "print");
                     uint64_t r4 = s -> gprs[4];
                     char printNum = read8(memory, r4);
                     printf("%c", printNum);
@@ -166,13 +133,11 @@ void run(State* s) {
                 switch (ext) {
                     //b
                     case 0 : {
-                if (opcodePrint) printf("%s\n", "b");
                         s -> pc += eAddr;
                         break;
                     }
                     //bl
                     case 1 : {
-                if (opcodePrint) printf("%s\n", "bl");
                         s -> lr = s -> pc + 4;
                         s -> pc += eAddr;
                         break;
@@ -182,13 +147,11 @@ void run(State* s) {
             }
             //blr, branch to linked register
             case 19 : {
-                if (opcodePrint) printf("%s\n", "blr");
                 s -> pc = s -> lr;
                 break;
             }
             //ori
             case 24 : {
-                if (opcodePrint) printf("%s\n", "ori");
                 uint16_t dest = (uint16_t) ((instr >> 16) & 0x1F);
                 uint16_t src = (uint16_t) ((instr >> 21) & 0x1F);
                 uint64_t imm = (uint64_t) (instr & 0xFFFF);
@@ -198,7 +161,6 @@ void run(State* s) {
             }
             //oris
             case 25 : {
-                if (opcodePrint) printf("%s\n", "oris");
                 uint16_t dest = (uint16_t) ((instr >> 16) & 0x1F);
                 uint16_t src = (uint16_t) ((instr >> 21) & 0x1F);
                 uint64_t imm = (uint64_t) (instr & 0xFFFF);
@@ -209,7 +171,6 @@ void run(State* s) {
             }
             //rldicr
             case 30 : {
-                if (opcodePrint) printf("%s\n", "rldicr");
                 uint16_t dest = (uint16_t) ((instr >> 16) & 0x1F);
                 uint64_t temp = s -> gprs[dest];
                 temp = (temp << 32) & 0xFFFFFFFF00000000;
@@ -223,7 +184,6 @@ void run(State* s) {
                 switch (ext) {
                     //add
                     case 266 : {
-                if (opcodePrint) printf("%s\n", "add");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t srcB = (uint16_t) ((instr >> 11) & 0x1F);
@@ -233,7 +193,6 @@ void run(State* s) {
                     }
                     //subf
                     case 40 : {
-                if (opcodePrint) printf("%s\n", "subf");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t srcB = (uint16_t) ((instr >> 11) & 0x1F);
@@ -243,7 +202,6 @@ void run(State* s) {
                     }
                     //mulld, might be 235
                     case 233 : {
-                if (opcodePrint) printf("%s\n", "mulld");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t srcB = (uint16_t) ((instr >> 11) & 0x1F);
@@ -253,7 +211,6 @@ void run(State* s) {
                     }
                     //divdu
                     case 457 : {
-                if (opcodePrint) printf("%s\n", "divdu");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t srcB = (uint16_t) ((instr >> 11) & 0x1F);
@@ -263,7 +220,6 @@ void run(State* s) {
                     }
                     //mr
                     case 444 : {
-                if (opcodePrint) printf("%s\n", "mr");
                         uint16_t dest = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t src = (uint16_t) ((instr >> 21) & 0x1F);
                         s -> gprs[dest] = s -> gprs[src];
@@ -272,7 +228,6 @@ void run(State* s) {
                     }
                     //mflr
                     case 339 : {
-                if (opcodePrint) printf("%s\n", "mflr");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         s -> gprs[dest] = s -> lr;
                         s -> pc += 4;
@@ -280,7 +235,6 @@ void run(State* s) {
                     }
                     //mtlr
                     case 467 : {
-                if (opcodePrint) printf("%s\n", "mtlr");
                         uint16_t src = (uint16_t) ((instr >> 21) & 0x1F);
                         s -> lr = s -> gprs[src];
                         s -> pc += 4;
@@ -288,7 +242,6 @@ void run(State* s) {
                     }
                     //cmpd
                     case 0 : {
-                if (opcodePrint) printf("%s\n", "cmpd");
                         uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t srcB = (uint16_t) ((instr >> 11) & 0x1F);
                         if ((s -> gprs[srcA]) < (s -> gprs[srcB])) {
@@ -305,7 +258,6 @@ void run(State* s) {
                     }
                     //stbx
                     case 215 : {
-                if (opcodePrint) printf("%s\n", "stbx");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t srcA = (uint16_t) ((instr >> 16) & 0x1F);
                         uint16_t srcB = (uint16_t) ((instr >> 11) & 0x1F);
@@ -330,7 +282,6 @@ void run(State* s) {
             }
             //stb
             case 38 : {
-                if (opcodePrint) printf("%s\n", "stb");
                 uint16_t dest = (uint16_t) (instr >> 21 & 0x1F);
                 uint16_t src = (uint16_t) (instr >> 16 & 0x1F);
                 int imm = (int) (instr << 16);
@@ -349,7 +300,6 @@ void run(State* s) {
             }
             //ld
             case 58 : {
-                if (opcodePrint) printf("%s\n", "ld");
                 uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                 uint16_t src = (uint16_t) ((instr >> 16) & 0x1F);
                 int imm = (int) (instr << 16);
@@ -375,7 +325,6 @@ void run(State* s) {
                 switch (ext) {
                     //std
                     case 0 : {
-                if (opcodePrint) printf("%s\n", "std");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t src = (uint16_t) ((instr >> 16) & 0x1F);
                         int imm = (int) (instr << 16);
@@ -394,7 +343,6 @@ void run(State* s) {
                     }
                     //stdu
                     case 1 : {
-                if (opcodePrint) printf("%s\n", "stdu");
                         uint16_t dest = (uint16_t) ((instr >> 21) & 0x1F);
                         uint16_t src = (uint16_t) ((instr >> 16) & 0x1F);
                         int imm = (int) (instr << 16);
